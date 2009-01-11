@@ -94,6 +94,8 @@ static PN potion_str_escape(Potion *P, PN closure, PN self) {
     else {
       char c = str[str_offset];
       if(c == '\\') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '\\'; }
+      else if(c == '"') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '"'; }
+      else if(c == '\'') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '\''; }
       else if(isprint(c)) { buf[buf_offset++] = str[str_offset]; }
       else if(c == 7) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'a'; }
       else if(c == 8) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'b'; }
