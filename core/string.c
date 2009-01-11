@@ -66,24 +66,55 @@ static PN potion_str_eval(Potion *P, PN closure, PN self) {
   return potion_eval(P, PN_STR_PTR(self));
 }
 
-static PN potion_str_inspect(Potion *P, PN closure, PN self) {
-  int i;
-  printf("\"");
-  for(i = 0; i < PN_STR_LEN(self); i++) {
-    char c = PN_STR_PTR(self)[i];
-    if(c == '\\') printf("\\\\");
-    else if(isprint(c)) printf("%c", c);
-    else if(c == 7) printf("\\a");
-    else if(c == 8) printf("\\b");
-    else if(c == 9) printf("\\t");
-    else if(c == 10) printf("\\n");
-    else if(c == 11) printf("\\v");
-    else if(c == 12) printf("\\f");
-    else if(c == 13) printf("\\r");
-    else if(c == 27) printf("\\e");
-    else printf("\\%d", (int)c);
+static size_t potion_utf8char_width(const char *s, size_t index) {
+  if((s[index] & 0x80) == 0) return 1;
+  switch(s[index] & 0xF0) {
+    case 0xE0: return 3;
+    case 0xF0: return 4;
+    default: return 2; // assume valid. what could possibly go wrong?
   }
-  printf("\"");
+}
+
+static PN potion_str_escape(Potion *P, PN closure, PN self) {
+  PN ret;
+  char* str = PN_STR_PTR(self);
+  /* at worst we're escaping every character into octal form (4 bytes) */
+  char buf[1 + (PN_STR_LEN(self) * 4)];
+
+  int str_offset = 0;
+  int buf_offset = 0;
+
+  while(str_offset < PN_STR_LEN(self)) {
+    size_t width = potion_utf8char_width(str, str_offset);
+
+    if(width > 1) { // multibyte; no escaping required
+      PN_MEMCPY_N(&buf[buf_offset], &str[str_offset], char, width);
+      buf_offset += width;
+    }
+    else {
+      char c = str[str_offset];
+      if(c == '\\') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '\\'; }
+      else if(isprint(c)) { buf[buf_offset++] = str[str_offset]; }
+      else if(c == 7) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'a'; }
+      else if(c == 8) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'b'; }
+      else if(c == 9) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 't'; }
+      else if(c == 10) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'n'; }
+      else if(c == 11) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'v'; }
+      else if(c == 12) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'f'; }
+      else if(c == 13) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'r'; }
+      else if(c == 27) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'e'; }
+      else { buf_offset += sprintf(buf, "\\%o", (unsigned int)str[str_offset]); }
+    }
+
+    str_offset += width;
+  }
+
+  ret = potion_str2(P, buf, buf_offset);
+  return ret;
+}
+
+static PN potion_str_inspect(Potion *P, PN closure, PN self) {
+  printf("\"%s\"", PN_STR_PTR(potion_str_escape(P, closure, self)));
   return PN_NIL;
 }
 
