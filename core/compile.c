@@ -69,18 +69,18 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       else
         printf(", ");
     } else
-      potion_send(v, PN_inspect);
+      potion_send(v, PN_print);
   });
   printf(") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->locals, i, v, {
-    printf(".local \"");
-    potion_send(v, PN_inspect);
-    printf("\" ; %u\n", i);
+    printf(".local ");
+    potion_send(v, PN_print);
+    printf(" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->upvals, i, v, {
-    printf(".upval \"");
-    potion_send(v, PN_inspect);
-    printf("\" ; %u\n", i);
+    printf(".upval ");
+    potion_send(v, PN_print);
+    printf(" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->values, i, v, {
     printf(".value ");
@@ -118,7 +118,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       case OP_SETLOCAL:
       case OP_GETLOCAL:
         printf("\t; ");
-        potion_send(PN_TUPLE_AT(t->locals, pos->b), PN_inspect);
+        potion_send(PN_TUPLE_AT(t->locals, pos->b), PN_print);
         break;
     }
     printf("\n");
