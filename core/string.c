@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "potion.h"
 #include "internal.h"
 #include "khash.h"
@@ -66,7 +67,23 @@ static PN potion_str_eval(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_str_inspect(Potion *P, PN closure, PN self) {
-  printf("%s", PN_STR_PTR(self));
+  int i;
+  printf("\"");
+  for(i = 0; i < PN_STR_LEN(self); i++) {
+    char c = PN_STR_PTR(self)[i];
+    if(c == '\\') printf("\\\\");
+    else if(isprint(c)) printf("%c", c);
+    else if(c == 7) printf("\\a");
+    else if(c == 8) printf("\\b");
+    else if(c == 9) printf("\\t");
+    else if(c == 10) printf("\\n");
+    else if(c == 11) printf("\\v");
+    else if(c == 12) printf("\\f");
+    else if(c == 13) printf("\\r");
+    else if(c == 27) printf("\\e");
+    else printf("\\%d", (int)c);
+  }
+  printf("\"");
   return PN_NIL;
 }
 
