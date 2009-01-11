@@ -97,15 +97,17 @@ static PN potion_str_escape(Potion *P, PN closure, PN self) {
       else if(c == '"') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '"'; }
       else if(c == '\'') { buf[buf_offset++] = '\\'; buf[buf_offset++] = '\''; }
       else if(isprint(c)) { buf[buf_offset++] = str[str_offset]; }
-      else if(c == 7) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'a'; }
-      else if(c == 8) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'b'; }
-      else if(c == 9) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 't'; }
-      else if(c == 10) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'n'; }
-      else if(c == 11) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'v'; }
-      else if(c == 12) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'f'; }
-      else if(c == 13) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'r'; }
-      else if(c == 27) { buf[buf_offset++] = '\\'; buf[buf_offset++] = 'e'; }
-      else { buf_offset += sprintf(buf, "\\%o", (unsigned int)str[str_offset]); }
+      else switch(c) {
+        case  7: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'a'; break;
+        case  8: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'b'; break;
+        case  9: buf[buf_offset++] = '\\'; buf[buf_offset++] = 't'; break;
+        case 10: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'n'; break;
+        case 11: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'v'; break;
+        case 12: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'f'; break;
+        case 13: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'r'; break;
+        case 27: buf[buf_offset++] = '\\'; buf[buf_offset++] = 'e'; break;
+        default: buf_offset += sprintf(buf, "\\%o", (unsigned int)str[str_offset]); break;
+      }
     }
 
     str_offset += width;
