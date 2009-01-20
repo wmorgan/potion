@@ -35,7 +35,8 @@ const char *potion_op_names[] = {
   "not", "cmp", "eq", "neq",
   "lt", "lte", "gt", "gte", "bitl", "bitr",
   "bind", "jump", "test", "testjmp", "notjmp",
-  "call", "tailcall", "return", "proto"
+  "call", "tailcall", "return", "proto", "handle",
+  "signal"
 };
 
 const u8 potion_op_args[] = {
@@ -47,7 +48,7 @@ const u8 potion_op_args[] = {
   1, 2, 2, 2,
   2, 2, 2, 2, 2, 2,
   2, 1, 2, 2, 2,
-  2, 2, 1, 2
+  2, 2, 1, 2, 2, 1
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
@@ -382,6 +383,20 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
       } else if (t->a[0] == PN_return) {
         PN_ARG_TABLE(t->a[1], reg, reg);
         PN_ASM1(OP_RETURN, reg);
+      } else if (t->a[0] == PN_handle) {
+        if(PN_PART(t->a[1]) == AST_TABLE) {
+          struct PNSource* s = (struct PNSource*)PN_S(t->a[1], 0);
+          if (PN_TUPLE_LEN(s) == 2) {
+            breg++;
+            potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_TUPLE_AT(s, 0), reg, pos);
+            potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_TUPLE_AT(s, 1), breg, pos);
+            PN_ASM2(OP_INSTALL_HANDLER, reg, breg);
+          }
+          else fprintf(stderr, "handle given tuple with length %d\n", PN_TUPLE_LEN(s));
+        }
+      } else if (t->a[0] == PN_signal) {
+        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_ASM1(OP_SIGNAL, reg);
       } else if (t->a[0] == PN_break) {
         if (loop != NULL) {
           loop->bjmps[loop->bjmpc++] = *pos;

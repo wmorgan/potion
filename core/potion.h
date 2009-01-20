@@ -265,7 +265,8 @@ struct Potion_State {
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
    PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN__link,
-   PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_while;
+   PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_handle,
+   PN_signal, PN_while;
 
 //
 // the Potion functions
