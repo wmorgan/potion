@@ -1,0 +1,25 @@
+handle ("hello", ():
+  "handling hello condition!\n" print
+  "continue"
+.)
+
+test1 = ():
+  "in test1\n" print
+  if (signal "hello" == "continue"):
+    "continuing"
+  . else:
+    "erroring"
+  ..
+
+test2 = ():
+"in test2\n" print
+  test1()
+.
+
+test3 = ():
+"in test3\n" print
+  test2()
+.
+
+"starting\n" print
+test3()
