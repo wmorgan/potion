@@ -87,6 +87,14 @@ PN potion_table__link(Potion *P, PN cl, PN self, PN link) {
   return link;
 }
 
+PN potion_table_new() {
+  struct PNTable *t = PN_CALLOC(struct PNTable, 0);
+  t->kh = PN_CALLOC(kh_PN_t, 0);
+  PN_GB(t);
+  t->vt = PN_TTABLE;
+  return (PN)t;
+}
+
 #define NEW_TUPLE(t, size, ptr) \
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
   t->len = size; \
