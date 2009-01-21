@@ -1,0 +1,19 @@
+## when a condition handlers returns nil, the condition should
+## propagate to any condition handlers higher up the stack.
+
+test1 = ():
+  handle ("condition", (): nil .)
+  signal "condition"
+.
+
+test2 = ():
+  handle ("condition", (): nil .)
+  test1()
+.
+
+test3 = ():
+  handle ("condition", (): "test3" .)
+  test2()
+.
+
+test3() # => test3

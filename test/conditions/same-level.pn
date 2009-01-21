@@ -1,0 +1,8 @@
+## signaling a condition can trigger a handler that's on
+## the same level of the stack.
+
+f = ():
+  handle ("condition", (): "works" .)
+  signal "condition"
+.
+f() # => works

@@ -1,0 +1,4 @@
+## you can install signal handlers at the top level.
+
+handle ("hello", (): "goodbye" .)
+signal "hello" # => goodbye

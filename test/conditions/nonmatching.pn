@@ -1,0 +1,7 @@
+## non-matching signal handlers shouldn't be called
+
+handle ("condition1", (): "wrong" .)
+handle ("condition2", (): "wrong" .)
+handle ("condition3", (): "right" .)
+
+signal "condition3" # => right

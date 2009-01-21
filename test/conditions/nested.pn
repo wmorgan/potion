@@ -1,0 +1,16 @@
+## signaling a condition should travel up the stack
+## arbitrarily high.
+
+handle ("muffin", (): "bake it" .)
+
+test1 = ():
+  if (signal "muffin" == "bake it"):
+    "baking"
+  . else:
+    "frying"
+_test1
+
+test2 = (): test1() .
+test3 = (): test2() .
+
+test3() # => baking

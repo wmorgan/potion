@@ -1,0 +1,21 @@
+## the lowest-on-the-stack active condition handler
+## should trigger.
+
+handle ("condition", (): "toplevel" .)
+
+test1 = ():
+  handle ("condition", (): "test1" .)
+  signal "condition"
+.
+
+test2 = ():
+  handle ("condition", (): "test2" .)
+  test1()
+.
+
+test3 = ():
+  handle ("condition", (): "test3" .)
+  test2()
+.
+
+test3() # => test1
