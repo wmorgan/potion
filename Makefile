@@ -141,7 +141,7 @@ test: potion test/api/potion-test
 			 fi; \
 		fi; \
 		for f in test/**/*.pn; do \
-			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+			look=`cat $$f | sed "/\# =>/!d; s/.*\# =>\s*//"`; \
 			if [ $$pass -eq 0 ]; then \
 				for=`./potion -I -B $$f | sed "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
