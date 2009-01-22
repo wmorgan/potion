@@ -593,6 +593,30 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 }
 #endif
 
+// look for a condition handler, starting at the given handler table address
+// (which can be nil). walk up through the call stack until a match is found.
+// when found, return it, and update the handler table address to the next
+// frame up the stack (so that this function can be successively called to
+// walk up the entire stack if there are multiple matches).
+static PN potion_find_handler(Potion *P, PN condition, PN *stack, PN **handtab) {
+  PN ret = PN_NIL;
+  while(ret == PN_NIL) {
+    if(**handtab != PN_NIL) {
+      PN handler = potion_table_at(P, 0, **handtab, condition);
+      if(PN_TYPE(handler) == PN_TCLOSURE) ret = handler;
+    }
+
+    PN *frame = *handtab;
+    if(frame > stack) {
+      struct PNProto* framef = PN_PROTO(frame[-2]);
+      PN* framereg = frame - (PN_INT(framef->stack) + 2);
+      *handtab = framereg - (framef->localsize + framef->upvalsize + 2);
+    }
+  }
+
+  return ret;
+}
+
 PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
@@ -601,7 +625,7 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
   PN val = PN_NIL, self = PN_NIL;
 
   // these variables change from proto to proto
-  // current = upvals | locals | handler table | self | reg
+  // current = condition handler table | upvals | locals | self | reg
   PN_OP *pos, *end;
   long argx = 0;
   PN *args = NULL, *upvals, *locals, *reg, *handtab;
@@ -616,10 +640,10 @@ reentry:
     exit(1);
   }
 
-  upvals = current;
+  handtab = current;
+  upvals = handtab + 1;
   locals = upvals + f->upvalsize;
-  handtab = locals + f->localsize;
-  reg = handtab + 2;
+  reg = locals + f->localsize + 1;
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
     reg[-1] = reg[0] = self;
@@ -639,10 +663,9 @@ reentry:
         }
       });
     }
-
-    *handtab = PN_NIL;
   }
 
+  *handtab = PN_NIL;
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
   while (pos < end) {
     // printf("CODE: %s\n", potion_op_names[pos->code]);
@@ -751,7 +774,6 @@ reentry:
         if (!PN_TEST(reg[pos->a])) pos += pos->b;
       break;
       case OP_CALL:
-begin_call:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
           if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
             reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
@@ -810,49 +832,18 @@ begin_call:
       break;
       case OP_INSTALL_HANDLER: {
         if (PN_TYPE(reg[pos->b]) != PN_TCLOSURE)  {
-          fprintf(stderr, "install-handler: not a closure for arg b\n");
+          fprintf(stderr, "** not given a closure for handler\n");
           break;
         }
-
-        if(*handtab == PN_NIL) {
-          *handtab = potion_table_new();
-        }
-
+        if(*handtab == PN_NIL) *handtab = potion_table_new();
         potion_table_put(P, 0, *handtab, reg[pos->a], reg[pos->b]);
-        reg[pos->a] = reg[pos->b]; // result will be handler
       }
       break;
-
-      case OP_SIGNAL: {
-        val = reg[pos->a];
-        if(val != PN_NIL) {
-          PN *frame = current;
-          PN *frametab = handtab;
-          PN handler = PN_NIL;
-          while(frame >= stack) {
-            if(*frametab != PN_NIL) {
-              handler = potion_table_at(P, 0, *frametab, val);
-              if(PN_TYPE(handler) == PN_TCLOSURE) {
-                break;
-              }
-            }
-            if(frame > stack) {
-              struct PNProto* framef = PN_PROTO(frame[-2]);
-              PN* framereg = frame - (PN_INT(framef->stack) + 2);
-              frame = framereg - (framef->localsize + framef->upvalsize + 2);
-              frametab = frame + framef->upvalsize + framef->localsize;
-            }
-          }
-
-          if(handler != PN_NIL) {
-            pos->b = pos->a;
-            reg[pos->b] = handler;
-            goto begin_call;
-          }
-          else {
-            //TODO: call default handler
-          }
-        }
+      case OP_FIND_HANDLER: {
+        PN *loc = handtab + PN_INT(reg[pos->b]);
+        PN handler = potion_find_handler(P, reg[pos->a], stack, &loc); // modifies loc
+        reg[pos->a] = handler; // write handler
+        reg[pos->b] = PN_NUM(loc - handtab); // write new offset
       }
       break;
     }

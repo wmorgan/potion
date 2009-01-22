@@ -59,7 +59,7 @@ enum PN_OPCODE {
   OP_RETURN,
   OP_PROTO,
   OP_INSTALL_HANDLER,
-  OP_SIGNAL,
+  OP_FIND_HANDLER,
 };
 
 #endif

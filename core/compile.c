@@ -36,7 +36,7 @@ const char *potion_op_names[] = {
   "lt", "lte", "gt", "gte", "bitl", "bitr",
   "bind", "jump", "test", "testjmp", "notjmp",
   "call", "tailcall", "return", "proto", "handle",
-  "signal"
+  "find_handler"
 };
 
 const u8 potion_op_args[] = {
@@ -48,7 +48,7 @@ const u8 potion_op_args[] = {
   1, 2, 2, 2,
   2, 2, 2, 2, 2, 2,
   2, 1, 2, 2, 2,
-  2, 2, 1, 2, 2, 1
+  2, 2, 1, 2, 2, 2
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
@@ -395,8 +395,30 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
           else fprintf(stderr, "handle given tuple with length %d\n", PN_TUPLE_LEN(s));
         }
       } else if (t->a[0] == PN_signal) {
-        PN_ARG_TABLE(t->a[1], reg, reg);
-        PN_ASM1(OP_SIGNAL, reg);
+        // signaling a condition. produce a loop that successively calls
+        // handlers up the stack, stopping when one of them returns something
+        // non-false.
+        //
+        // registers:
+        //   reg: the condition
+        //  breg: the search offset
+        //  creg: the current handler being tried (and temporarily the condition)
+        //  dreg: the return value of the hander
+        PN_OP *jmp, *dest;
+        breg++;
+        u8 creg = breg + 1; PN_REG(f, creg);
+        u8 dreg = creg + 1; PN_REG(f, dreg);
+        PN_ARG_TABLE(t->a[1], reg, reg); // eval condition to signal
+        PN_ASM2(OP_LOADPN, breg, 1); // load 0 into breg as the starting search offset
+        dest = *pos;
+        PN_ASM2(OP_MOVE, creg, reg); // copy condition from reg to creg
+        PN_ASM2(OP_FIND_HANDLER, creg, breg); // find handler for condition in creg, starting at stack offset breg. put handler in creg and offset in breg
+        PN_ASM1(OP_SELF, dreg);
+        PN_ASM2(OP_CALL, dreg, creg); // call handler in creg, put result in dreg
+        jmp = *pos;
+        PN_ASM2(OP_NOTJMP, dreg, 0); // if result is false, loop
+        jmp->b = (dest - *pos);
+        PN_ASM2(OP_MOVE, reg, dreg); // copy return value to reg
       } else if (t->a[0] == PN_break) {
         if (loop != NULL) {
           loop->bjmps[loop->bjmpc++] = *pos;
