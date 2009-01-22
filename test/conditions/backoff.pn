@@ -2,12 +2,12 @@
 ## propagate to any condition handlers higher up the stack.
 
 test1 = ():
-  handle ("condition", (): nil .)
+  handle ("condition", (): false .)
   signal "condition"
 .
 
 test2 = ():
-  handle ("condition", (): nil .)
+  handle ("condition", (): false .)
   test1()
 .
 
