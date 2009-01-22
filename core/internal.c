@@ -52,8 +52,6 @@ static void potion_init(Potion *P) {
   PN_string = potion_str(P, "string");
   PN_signal = potion_str(P, "signal");
   PN_while = potion_str(P, "while");
-  potion_str(P, "one");
-  potion_str(P, "two");
   PN_handle = potion_str(P, "handle");
   PN__link = potion_str(P, "~link");
 
