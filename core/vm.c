@@ -758,6 +758,11 @@ reentry:
       break;
       case OP_BIND:
         reg[pos->a] = potion_bind(P, reg[pos->b], reg[pos->a]);
+        if(PN_IS_NIL(reg[pos->a])) { // couldn't find it
+          reg[pos->a] = reg[-1];
+          reg[pos->b] = P->errorfunc;
+          goto op_call;
+        }
       break;
       case OP_JMP:
         pos += pos->a;
@@ -771,6 +776,7 @@ reentry:
       case OP_NOTJMP:
         if (!PN_TEST(reg[pos->a])) pos += pos->b;
       break;
+op_call:
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
           if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {

@@ -71,6 +71,17 @@ static void potion_init(Potion *P) {
   potion_compiler_init(P);
 }
 
+// build an error function to be called when something bad happens.
+// TODO: make this signal some kind of exception class instead of
+// a string.
+//
+// TODO: once string concatenation is supported, use the name as an argument
+static PN potion_build_errorfunc(Potion *P) {
+  PN bytes = potion_byte_str(P, "(): signal (\"an error occurred\").");
+  PN code = potion_parse(P, bytes);
+  return potion_send(code, PN_compile, PN_NIL, PN_NIL);
+}
+
 Potion *potion_create() {
   Potion *P = PN_ALLOC(Potion);
   PN_MEMZERO(P, Potion);
@@ -80,6 +91,8 @@ Potion *potion_create() {
   P->typen = PN_TUSER;
   P->vts = PN_ALLOC_N(PN, P->typea);
   potion_init(P);
+  P->errorfunc = potion_build_errorfunc(P);
+
   return P;
 }
 

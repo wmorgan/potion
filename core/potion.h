@@ -224,6 +224,7 @@ struct Potion_State {
   PN strings; /* table of all strings */
   unsigned int next_string_id;
   PN lobby; /* root namespace */
+  PN errorfunc; /* called when something bad happens */
   PN *vts;
   int typen; /* number of actual types in circulation */
   int typea; /* type space allocated */ 
