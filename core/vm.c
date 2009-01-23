@@ -610,6 +610,7 @@ static PN potion_find_handler(Potion *P, PN condition, PN *stack, PN **handtab) 
       PN* framereg = frame - (PN_INT(framef->stack) + 2);
       *handtab = framereg - (framef->localsize + framef->upvalsize + 2);
     }
+    else break;
   }
 
   return ret;
@@ -839,6 +840,10 @@ reentry:
       case OP_FIND_HANDLER: {
         PN *loc = handtab + PN_INT(reg[pos->b]);
         PN handler = potion_find_handler(P, reg[pos->a], stack, &loc); // modifies loc
+        if(PN_IS_NIL(handler)) {
+          fprintf(stderr, "*** no handler for condition '%s'\n", PN_STR_PTR(potion_send(reg[pos->a], PN_string)));
+          exit(-1);
+        }
         reg[pos->a] = handler; // write handler
         reg[pos->b] = PN_NUM(loc - handtab); // write new offset
       }
